@@ -1,7 +1,7 @@
 #--- Data Set Pinophyta de México
 #--- 12/05/26
 #--- Morales Esu
-
+library(mapview)
 #DESCRIPCION
 #En estas lineas se escribe codigo para cumplir con 3 objetivos: 
 #---1. Visualizar el numero de generos y especies por estado
