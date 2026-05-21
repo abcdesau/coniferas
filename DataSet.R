@@ -125,7 +125,7 @@ leaflet( data = estados ) %>%
   addProviderTiles(providers$CartoDB.DarkMatter, group = "Mapa oscuro") %>%
   addTiles(group = "Mapa base") %>%
   addPolygons( fillColor = "lightblue",
-               popup = ~paste("Estado: ", NOMGEO),
+               popup = ~paste("<b> Estado: </b>", NOMGEO),
                group = "Límites estatales")%>%
   addCircleMarkers( data = coniferas_state,
                     ~decimalLongitude, ~decimalLatitude,
@@ -133,9 +133,9 @@ leaflet( data = estados ) %>%
                     color = "red", 
                     
                     popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
-                                     "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
-                                     "<b>Estado: </b>", stateProvince, "<br>",
-                                     "<b>No. coniferas por Estado: </b>", n_coni),
+                                    "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
+                                    "<b> No. coniferas por Estado: </b>", n_coni,"<br>",
+                                    "<b> Imágenes: </b> <a href='", occurrenceID, "' target='_blank' style='color: blue;'>Ver imagen</a>"),
                     group = "Registros individuales") %>%
   addLayersControl(
     baseGroups = c("Mapa base", "Mapa oscuro"),
