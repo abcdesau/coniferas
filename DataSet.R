@@ -122,6 +122,7 @@ plot( st_geometry(estados))
 #---Agregando capa de estados, registros y control de capas
 
 leaflet( data = estados ) %>%
+  addProviderTiles(providers$CartoDB.DarkMatter, group = "Mapa oscuro") %>%
   addTiles(group = "Mapa base") %>%
   addPolygons( fillColor = "lightblue",
                popup = ~paste("Estado: ", NOMGEO),
@@ -137,7 +138,7 @@ leaflet( data = estados ) %>%
                                      "<b>No. coniferas por Estado: </b>", n_coni),
                     group = "Registros individuales") %>%
   addLayersControl(
-    baseGroups = c("Mapa base"),
+    baseGroups = c("Mapa base", "Mapa oscuro"),
     overlayGroups = c("Límites estatales",
                       "Registros individuales"),
     options = layersControlOptions(collapsed = FALSE)
