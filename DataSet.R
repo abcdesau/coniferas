@@ -1,7 +1,7 @@
 #--- Data Set Pinophyta de México
 #--- 12/05/26
-#--- Morales Esu
-library(mapview)
+#--- Morales Esau
+
 #DESCRIPCION
 #En estas lineas se escribe codigo para cumplir con 3 objetivos: 
 #---1. Visualizar el numero de generos y especies por estado
@@ -34,23 +34,43 @@ coniferas <- read_delim( file = csvF,
                        delim = "\t")
 #                   locale = locale( encoding = "latin1" ) )
 
+
 shpF <- list.files( path = here("Division_politica"),
                         pattern = ".shp",
                         full.names = TRUE )
 
 estados <- st_read( shpF )
+#--- Modificando stateProvince con pipe
+
+coniferas_state <- coniferas %>%
+  mutate(stateProvince = case_when(
+    stateProvince %in% c("Michoacan de ocampo", "Michoacán") ~ "Michoacán",
+    stateProvince %in% c("Estado de México (ME)", "Mexico", "México") ~ "EDOMEX",
+    stateProvince == "Veracruz de ignacio de la llave" ~ "Veracruz",
+    stateProvince %in% c("Hidalgo (HG)", "Hidalgo") ~ "Hidalgo",
+    stateProvince == "San luis potosi" ~ "San Luis Potosí",
+    stateProvince == "Coahuila de zaragoza" ~ "Coahuila",
+    stateProvince == "Nuevo leon" ~ "Nuevo León",
+    stateProvince %in% c("Distrito federal", "Distrito Federal", "Ciudad de mexico") ~ "CDMX",
+    stateProvince == "Baja california" ~ "Baja California",
+    stateProvince == "Queretaro de arteaga" ~ "Querétaro",
+    stateProvince == "COLIMA, JALISCO" ~ NA_character_, 
+    TRUE ~ stateProvince
+  )) %>%
+  filter(!is.na(stateProvince))
 
 #---Crendo mapa con leaflet
 
-leaflet( data = coniferas ) %>%
+leaflet( data = coniferas_state ) %>%
   addTiles() %>%
   addCircleMarkers( ~decimalLongitude, ~decimalLatitude,
-                    popup = ~`species`,
+                    popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
+                                    "<b> Especie: </b>", "<em>", species,"</em>"),
                     radius = 4, 
                     color = "red")
 # Calculando estadisticas por estado
 
-conteo <- coniferas %>%
+conteo <- coniferas_state %>%
   group_by( stateProvince ) %>%
   summarise( num_coni = n() ) %>%
   arrange( desc(num_coni) )
@@ -64,14 +84,14 @@ barplot( conteo$num_coni,
          names.arg = conteo$stateProvince,
          col = "steelblue",
          main = "Distribución de pinus por Estado",
-         xlab = "Número de ",
+         xlab = "Número de registros",
          ylab = "",
          horiz = TRUE,
          cex.names = .7,
          las = 1)
 # Graficando con ggplot
 
-coniferas %>%
+coniferas_state %>%
   group_by( stateProvince ) %>%
   summarise( num_coni = n() ) %>%
   arrange( desc(num_coni) ) %>%
@@ -83,21 +103,46 @@ coniferas %>%
 
 # Agregando informacion al mapa
 
-coniferas <- coniferas %>%
+coniferas_state <- coniferas_state %>%
   add_count( stateProvince, name = "n_coni" )
 
-leaflet( data = coniferas ) %>%
+leaflet( data = coniferas_state ) %>%
   addTiles() %>%
   addCircleMarkers( ~decimalLongitude, ~decimalLatitude,
                     radius = 4, 
                     color = "red", 
                     
-                    popup = ~paste0(
-                      `species`, "<br>",
-                      "<b>Estado: </b>", stateProvince, "<br>",
-                      "<b>No. coniferas por Estadi: </b>", n_coni
+                    popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
+                                    "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
+                                    "<b>Estado: </b>", stateProvince, "<br>",
+                                    "<b>No. coniferas por Estado: </b>", n_coni
                     ))
 
+plot( st_geometry(estados))
+#---Agregando capa de estados, registros y control de capas
+
+leaflet( data = estados ) %>%
+  addTiles(group = "Mapa base") %>%
+  addPolygons( fillColor = "lightblue",
+               popup = ~paste("Estado: ", NOMGEO),
+               group = "Límites estatales")%>%
+  addCircleMarkers( data = coniferas_state,
+                    ~decimalLongitude, ~decimalLatitude,
+                    radius = 4, 
+                    color = "red", 
+                    
+                    popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
+                                     "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
+                                     "<b>Estado: </b>", stateProvince, "<br>",
+                                     "<b>No. coniferas por Estado: </b>", n_coni),
+                    group = "Registros individuales") %>%
+  addLayersControl(
+    baseGroups = c("Mapa base"),
+    overlayGroups = c("Límites estatales",
+                      "Registros individuales"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+  
 
 
 
