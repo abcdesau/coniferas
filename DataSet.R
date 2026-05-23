@@ -40,6 +40,21 @@ shpF <- list.files( path = here("Division_politica"),
                         full.names = TRUE )
 
 estados <- st_read( shpF )
+#--- Modificando estados con dplyr
+
+diccionario_estados <- c(
+  "Coahuila de Zaragoza"            = "Coahuila",
+  "Ciudad de México"                = "CDMX",
+  "México"                          = "EDOMEX",
+  "Michoacán de Ocampo"            = "Michoacán",
+  "Veracruz de Ignacio de la Llave" = "Veracruz"
+)
+
+estados_state <- estados %>%
+  mutate(
+    NOMGEO_nuevo = recode(NOMGEO, !!!diccionario_estados)
+  )
+
 #--- Modificando stateProvince con pipe
 
 coniferas_state <- coniferas %>%
@@ -72,8 +87,27 @@ leaflet( data = coniferas_state ) %>%
 
 conteo <- coniferas_state %>%
   group_by( stateProvince ) %>%
-  summarise( num_coni = n() ) %>%
-  arrange( desc(num_coni) )
+  summarise( num_coni = n() )
+
+# Calculo de generos y especies unicas por estado
+riqueza_estados <- coniferas_state %>%
+  group_by(stateProvince) %>%
+  summarise(
+    num_registros = n(),
+    num_generos = n_distinct(genus),
+    num_especies = n_distinct(species)
+  ) %>%
+  arrange(desc(num_especies))
+
+# Agregando conteo a SHP estados
+estados_state <- estados_state %>%
+  left_join(riqueza_estados, by = c("NOMGEO_nuevo" = "stateProvince"))%>%
+  mutate(
+   # num_coni = ifelse(is.na(num_coni), 0, num_coni),
+    num_registros = ifelse(is.na(num_registros), 0, num_registros),
+    num_generos = ifelse(is.na(num_generos), 0, num_generos),
+    num_especies = ifelse(is.na(num_especies), 0, num_especies)
+    )
 
 # Creando grafico de barras
 
@@ -121,11 +155,14 @@ leaflet( data = coniferas_state ) %>%
 plot( st_geometry(estados))
 #---Agregando capa de estados, registros y control de capas
 
-leaflet( data = estados ) %>%
+leaflet( data = estados_state ) %>%
   addProviderTiles(providers$CartoDB.DarkMatter, group = "Mapa oscuro") %>%
   addTiles(group = "Mapa base") %>%
   addPolygons( fillColor = "lightblue",
-               popup = ~paste("<b> Estado: </b>", NOMGEO),
+               popup = ~paste0("<b> Estado: </b>", NOMGEO_nuevo,"<br>",
+                              "<b> Num. Géneros: </b>", num_generos,"<br>",
+                              "<b> Num. Especies: </b>", num_especies,"<br>",
+                              "<b> Num. Registros por estado: </b>", num_registros),
                group = "Límites estatales")%>%
   addCircleMarkers( data = coniferas_state,
                     ~decimalLongitude, ~decimalLatitude,
@@ -134,7 +171,6 @@ leaflet( data = estados ) %>%
                     
                     popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
                                     "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
-                                    "<b> No. coniferas por Estado: </b>", n_coni,"<br>",
                                     "<b> Imágenes: </b> <a href='", occurrenceID, "' target='_blank' style='color: blue;'>Ver imagen</a>"),
                     group = "Registros individuales") %>%
   addLayersControl(
