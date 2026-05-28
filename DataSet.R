@@ -13,7 +13,7 @@
 
 
 #---Librerias
-
+install.packages("leaflet.extras")
 library(here)
 library(readr)
 library(sf)
@@ -21,6 +21,7 @@ library( leaflet )
 library( dplyr )
 library(ggplot2)
 library(htmlwidgets)
+library(leaflet.extras)
 
 #---Abriendo los .csv
 
@@ -135,18 +136,18 @@ estados_state <- estados_state %>%
 
 # Creando grafico de barras
 
-default_mar <- par( "mar" )
-
-par( mar = c( 5, 12, 4, 2 ) )
-barplot( conteo$num_coni,
-         names.arg = conteo$stateProvince,
-         col = "steelblue",
-         main = "Distribución de pinus por Estado",
-         xlab = "Número de registros",
-         ylab = "",
-         horiz = TRUE,
-         cex.names = .7,
-         las = 1)
+# default_mar <- par( "mar" )
+# 
+# par( mar = c( 5, 12, 4, 2 ) )
+# barplot( conteo$num_coni,
+#          names.arg = conteo$stateProvince,
+#          col = "steelblue",
+#          main = "Distribución de pinus por Estado",
+#          xlab = "Número de registros",
+#          ylab = "",
+#          horiz = TRUE,
+#          cex.names = .7,
+#          las = 1)
 
 # Graficando con ggplot
 
@@ -162,22 +163,22 @@ coniferas_state %>%
 
 # Agregando informacion al mapa
 
-coniferas_state <- coniferas_state %>%
-  add_count( stateProvince, name = "n_coni" )
+# coniferas_state <- coniferas_state %>%
+#   add_count( stateProvince, name = "n_coni" )
+# 
+# leaflet( data = coniferas_state ) %>%
+#   addTiles() %>%
+#   addCircleMarkers( ~decimalLongitude, ~decimalLatitude,
+#                     radius = 4,
+#                     color = "red",
+# 
+#                     popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
+#                                     "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
+#                                     "<b>Estado: </b>", stateProvince, "<br>",
+#                                     "<b>No. coniferas por Estado: </b>", n_coni
+#                     ))
 
-leaflet( data = coniferas_state ) %>%
-  addTiles() %>%
-  addCircleMarkers( ~decimalLongitude, ~decimalLatitude,
-                    radius = 4,
-                    color = "red",
-
-                    popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
-                                    "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
-                                    "<b>Estado: </b>", stateProvince, "<br>",
-                                    "<b>No. coniferas por Estado: </b>", n_coni
-                    ))
-
-plot( st_geometry(estados))
+# plot( st_geometry(estados))
 
 # Creando una paleta para los registros
 
@@ -197,6 +198,12 @@ pal_especies <- colorNumeric(
 )
 #---Agregando capa de estados, registros y control de capas
 
+generos <- unique(coniferas_state$genus)
+paleta <- colorFactor(
+  palette = "Paired",
+  domain = coniferas_state$genus
+)
+
 MapaConiferas <-leaflet( data = estados_state ) %>%
   addProviderTiles(providers$CartoDB.DarkMatter,
                    group = "Mapa oscuro") %>%
@@ -210,54 +217,58 @@ MapaConiferas <-leaflet( data = estados_state ) %>%
                               "<b> Num. Géneros: </b>", num_generos,"<br>",
                               "<b> Num. Especies: </b>", num_especies,"<br>",
                               "<b> Num. Registros por estado: </b>", num_registros),
-               group = "Limites Estatales")%>%
+               group = "Estadísticas por estado")%>%
   addPolygons(fillColor = ~pal_registros(num_registros),
               fillOpacity = 0.8,
               color = "white",
-              group = "Registros por estado") %>%
+              popup = ~paste0("<b> Num. Registros por estado: </b>", num_registros),
+              group = "Estados con más registros") %>%
   addPolygons(fillColor = ~pal_generos(num_generos),
               fillOpacity = 0.8,
               color = "white",
-              group = "Géneros") %>%
+              popup = ~paste0("<b> Num. Géneros: </b>", num_generos,"<br>"),
+              group = "Estados con más Géneros") %>%
   addPolygons(fillColor = ~pal_especies(num_especies),
               fillOpacity = 0.8,
               color = "white",
-              group = "Especies") %>%
+              popup = ~paste0("<b> Num. Especies: </b>", num_especies,"<br>"),
+              group = "Estados con más Especies") %>%
   addCircleMarkers( data = coniferas_state,
                     ~decimalLongitude, ~decimalLatitude,
                     radius = 4, 
-                    color = "red", 
+                    color = ~paleta(genus), 
                     popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
-                                    "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
+                                    "<b> Especie: </b>", "<em>", species,"<em/>", "<br>",
                                     "<b> Imágenes: </b> <a href='", occurrenceID, "' target='_blank' style='color: blue;'>Ver imagen</a>"),
                     group = "Registros individuales") %>%
+  
   addLayersControl(
     baseGroups = c("Mapa base", "Mapa oscuro"),
-    overlayGroups = c("Limites Estatales",
-                      "Registros por estado",
-                      "Géneros",
-                      "Especies",
+    overlayGroups = c("Estadísticas por estado",
+                      "Estados con más registros",
+                      "Estados con más Géneros",
+                      "Estados con más Especies",
                       "Registros individuales"),
     options = layersControlOptions(collapsed = FALSE)
   ) %>%
   
-  hideGroup(c("Limites Estatales",
-              "Registros por estado",
-              "Géneros",
-              "Especies",
+  hideGroup(c("Estadísticas por estado",
+              "Estados con más registros",
+              "Estados con más Géneros",
+              "Estados con más Especies",
               "Registros individuales"))
   
 MapaConiferas
 
 # Exportando el mapa a un archivo HTML
 
-saveWidget(MapaConiferas, file = "temp.html", selfcontained = TRUE)
+saveWidget(MapaConiferas, file = "index.html", selfcontained = TRUE)
 
-texto_html <- readLines("temporal.html", warn = FALSE)
-texto_html <- gsub("<!DOCTYPE html>", "", texto_html)
-
-writeLines(texto_html, "index.html")
-file.remove("temp.html")
+# texto_html <- readLines("temporal.html", warn = FALSE)
+# texto_html <- gsub("<!DOCTYPE html>", "", texto_html)
+# 
+# writeLines(texto_html, "index.html")
+# file.remove("temp.html")
 
 
 
