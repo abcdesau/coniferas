@@ -96,22 +96,6 @@ coniferas_state <- coniferas %>%
   )) %>%
   filter(!is.na(stateProvince))
 
-#---Crendo mapa con leaflet
-
-# leaflet( data = coniferas_state ) %>%
-#   addTiles() %>%
-#   addCircleMarkers( ~decimalLongitude, ~decimalLatitude,
-#                     popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
-#                                     "<b> Especie: </b>", "<em>", species,"</em>"),
-#                     radius = 4, 
-#                     color = "red")
-
-# Calculando estadisticas por estado
-
-# conteo <- coniferas_state %>%
-#   group_by( stateProvince ) %>%
-#   summarise( num_coni = n() )
-
 # Calculo de generos y especies unicas por estado
 
 riqueza_estados <- coniferas_state %>%
@@ -134,21 +118,6 @@ estados_state <- estados_state %>%
     num_especies = ifelse(is.na(num_especies), 0, num_especies)
     )
 
-# Creando grafico de barras
-
-# default_mar <- par( "mar" )
-# 
-# par( mar = c( 5, 12, 4, 2 ) )
-# barplot( conteo$num_coni,
-#          names.arg = conteo$stateProvince,
-#          col = "steelblue",
-#          main = "Distribución de pinus por Estado",
-#          xlab = "Número de registros",
-#          ylab = "",
-#          horiz = TRUE,
-#          cex.names = .7,
-#          las = 1)
-
 # Graficando con ggplot
 
 coniferas_state %>%
@@ -160,25 +129,6 @@ coniferas_state %>%
   labs( x = "Estado", y = "Número de coniferas",
         title = "Distribución de coniferas por Estado") +
   coord_flip()
-
-# Agregando informacion al mapa
-
-# coniferas_state <- coniferas_state %>%
-#   add_count( stateProvince, name = "n_coni" )
-# 
-# leaflet( data = coniferas_state ) %>%
-#   addTiles() %>%
-#   addCircleMarkers( ~decimalLongitude, ~decimalLatitude,
-#                     radius = 4,
-#                     color = "red",
-# 
-#                     popup = ~paste0("<b> Género: </b>", "<em>", genus,"<em/>", "<br>",
-#                                     "<b> Especie: </b>", "<em>", species,"</em>", "<br>",
-#                                     "<b>Estado: </b>", stateProvince, "<br>",
-#                                     "<b>No. coniferas por Estado: </b>", n_coni
-#                     ))
-
-# plot( st_geometry(estados))
 
 # Creando una paleta para los registros
 
@@ -262,13 +212,9 @@ MapaConiferas
 
 # Exportando el mapa a un archivo HTML
 
-saveWidget(MapaConiferas, file = "index.html", selfcontained = TRUE)
+saveWidget(MapaConiferas, file = "index.html", selfcontained = FALSE, 
+           libdir = "lib")
 
-# texto_html <- readLines("temporal.html", warn = FALSE)
-# texto_html <- gsub("<!DOCTYPE html>", "", texto_html)
-# 
-# writeLines(texto_html, "index.html")
-# file.remove("temp.html")
 
 
 
