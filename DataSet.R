@@ -13,15 +13,14 @@
 
 
 #---Librerias
-install.packages("leaflet.extras")
-library(here)
-library(readr)
-library(sf)
+
+library( here )
+library( readr )
+library( sf )
 library( leaflet )
 library( dplyr )
-library(ggplot2)
-library(htmlwidgets)
-library(leaflet.extras)
+library( ggplot2 )
+library( htmlwidgets )
 
 #---Abriendo los .csv
 
@@ -213,7 +212,7 @@ MapaConiferas
 # Exportando el mapa a un archivo HTML
 
 saveWidget(MapaConiferas, file = "index.html", selfcontained = FALSE, 
-           libdir = "lib")
+           libdir = "leaflet-libs")
 
 
 
